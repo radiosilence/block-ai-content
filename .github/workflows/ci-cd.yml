@@ -25,9 +25,18 @@ jobs:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v3 # node + aube, as pinned in mise.toml
       - run: aube ci
+      # No --with-deps: the runner image already ships Chrome and its system
+      # libraries, and the extra apt packages (fonts) made runs crawl when
+      # Ubuntu's mirror was slow. The browser itself is cached between runs.
+      - id: pw
+        run: echo "version=$(node -p 'require("@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: Install Chromium for browser tests
-        run: ./node_modules/.bin/playwright install --with-deps chromium
-        timeout-minutes: 8
+        run: aube exec playwright install chromium
+        timeout-minutes: 5
       - name: Check (lint, typecheck, unit tests, build, browser tests)
         run: aube run check
       - uses: actions/upload-artifact@v5
