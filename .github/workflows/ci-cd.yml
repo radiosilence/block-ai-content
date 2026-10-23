@@ -13,16 +13,20 @@ permissions:
 
 concurrency:
   group: ci-cd-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Safe on main too: a release only publishes versions that don't exist yet.
+  cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v3 # node + aube, as pinned in mise.toml
       - run: aube ci
-      - run: aube exec playwright install --with-deps chromium
+      - name: Install Chromium for browser tests
+        run: ./node_modules/.bin/playwright install --with-deps chromium
+        timeout-minutes: 8
       - name: Check (lint, typecheck, unit tests, build, browser tests)
         run: aube run check
       - uses: actions/upload-artifact@v5
@@ -42,6 +46,7 @@ jobs:
     needs: check
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
