@@ -2,9 +2,12 @@
 
 A Chrome extension that hides images labelled as AI-generated, including on
 Facebook, Instagram and Threads. (Also works in Edge, Brave, Arc and other
-Chromium browsers. iOS Safari is [tracked here](https://github.com/radiosilence/block-ai-content/issues).)
+Chromium browsers. Android is [experimental](INSTALL.md#android-experimental); iOS Safari is
+[tracked here](https://github.com/radiosilence/block-ai-content/issues/1).)
 
 **Just want to install it? → [Installation guide](INSTALL.md)** (no technical knowledge needed)
+
+**Already installed? → [Test page](https://radiosilence.github.io/block-ai-content/)** tells you if it's working.
 
 ![Hidden image placeholder](docs/screenshot.png)
 
@@ -83,6 +86,7 @@ src/
   settings.ts      chrome.storage.sync-backed settings
   ui/              Popup and options page
 static/            manifest.json, HTML, CSS
+site/              The GitHub Pages test page (deployed by CI from main)
 scripts/           esbuild build, icon generator, release packager
 tests/             Vitest unit tests: real signed files from the C2PA reference SDK, and
                    Facebook/Instagram-shaped markup (jsdom)
@@ -116,7 +120,7 @@ Tooling is [mise](https://mise.jdx.dev) (pins Node and aube), [aube](https://git
 (package manager), and [oxc](https://oxc.rs) (`oxlint` + `oxfmt`).
 
 ```sh
-mise install        # Node 22 + aube, from mise.toml
+mise install        # Node 24 LTS + aube, from mise.toml
 aube install
 aube run build      # → dist/
 aube run watch      # rebuild on change

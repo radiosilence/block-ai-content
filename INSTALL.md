@@ -2,7 +2,8 @@
 
 This guide assumes no technical knowledge. It takes about five minutes.
 
-**Works in:** Google Chrome on Windows or Mac. Microsoft Edge, Brave, Arc, Vivaldi and Opera work too.
+**Works in:** Google Chrome on Windows or Mac. Microsoft Edge, Brave, Arc, Vivaldi and Opera work too.\
+**Android:** possible with a different browser, but experimental. See [Android](#android-experimental) at the end.\
 **Doesn't work in:** Safari (including iPhone and iPad) or Firefox, yet.
 
 > **On a work computer?** Many firms lock their browsers down so you can't add
@@ -74,6 +75,15 @@ A red "no entry" button now sits on your toolbar. Click it to see how many
 images it has hidden on the current page, to switch it off for a particular
 site, or to open the settings.
 
+## Step 5: Check it's working
+
+Open the **[test page](https://radiosilence.github.io/block-ai-content/)**. After a few seconds it should say
+**"✅ It's working"**, with the first of its three pictures replaced by a grey
+"AI-generated image hidden" box.
+
+If it says the extension doesn't seem to be running, go back to Step 3 and
+check **Block AI Content** is listed and its switch is on, then reload the test page.
+
 ---
 
 ## Using it
@@ -133,3 +143,35 @@ That's a generic warning about anything installed this way. You can dismiss it.
 Go to `chrome://extensions` (or `edge://extensions`), click **Remove** under
 Block AI Content, then delete the folder from Documents. You can turn
 **Developer mode** back off afterwards.
+
+---
+
+## Android (experimental)
+
+> **Not yet tested on a real phone.** These steps come from the browser's own
+> menus as documented, but nobody has confirmed the extension works there yet.
+> If you try it, please [say how it went](https://github.com/radiosilence/block-ai-content/issues).
+
+**Chrome on Android can't run extensions at all**, so you need a different
+browser. The simplest one that can install this extension from its download is
+**Quetta**, a free browser on the Google Play Store built on the same engine as Chrome.
+
+1. Install **Quetta Browser** from the Play Store.
+2. On your phone, open the [Releases page](https://github.com/radiosilence/block-ai-content/releases/latest)
+   in any browser and tap **`block-ai-content-….zip`** to download it. Don't unzip it.
+3. Open Quetta, tap the **⋮** menu, then the **extensions** icon.
+4. Choose **from .crx / .zip / .user.js**, then find and tap the zip you downloaded
+   (it'll be in **Downloads**).
+5. Open the [test page](https://radiosilence.github.io/block-ai-content/) in Quetta to check it's working (see Step 5).
+
+**Worth knowing before you bother:**
+
+- It only works **inside that browser**. It can't touch the Facebook or
+  Instagram **apps**, which is where most people see those sites on a phone.
+  You'd need to use Facebook in Quetta instead of the app.
+- Quetta is made by a small company, not Google. As on a computer, the extension
+  itself sends nothing anywhere, but you are trusting the browser with
+  everything you browse.
+- A smoother route, from the normal app store with nothing to download, needs
+  the extension published to the Chrome Web Store and Microsoft's Edge
+  Add-ons. That's [being tracked here](https://github.com/radiosilence/block-ai-content/issues/2).

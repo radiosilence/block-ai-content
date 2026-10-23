@@ -14,7 +14,7 @@
     "suspicious": "error",
     "perf": "error"
   },
-  "ignorePatterns": ["dist/**", "test-results/**", "playwright-report/**"],
+  "ignorePatterns": ["dist/**", "test-results/**", "playwright-report/**", "_site/**"],
   "rules": {
     "no-await-in-loop": "off"
   },

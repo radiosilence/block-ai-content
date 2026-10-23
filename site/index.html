@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Block AI Content: test page</title>
+    <meta name="description" content="Check that the Block AI Content Chrome extension is installed and working." />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f6f9;
+        --card: #ffffff;
+        --fg: #1d1d22;
+        --muted: #62626e;
+        --line: #e2e2e8;
+        --accent: #b3261e;
+        --ok: #1e7b34;
+        --ok-bg: #e6f4ea;
+        --bad-bg: #fce8e6;
+        --wait-bg: #ececf1;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121215;
+          --card: #1c1c21;
+          --fg: #ececf1;
+          --muted: #a0a0ad;
+          --line: #2e2e36;
+          --accent: #f2726a;
+          --ok: #7fd18f;
+          --ok-bg: #16301d;
+          --bad-bg: #3a1a18;
+          --wait-bg: #24242a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: var(--muted);
+        margin: 0 0 16px;
+      }
+      a {
+        color: var(--accent);
+      }
+      #status {
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin: 24px 0 32px;
+        font-size: 18px;
+        font-weight: 600;
+        background: var(--wait-bg);
+      }
+      #status[data-state="ok"] {
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      #status[data-state="bad"] {
+        background: var(--bad-bg);
+        color: var(--accent);
+      }
+      #status small {
+        display: block;
+        font-weight: 400;
+        font-size: 15px;
+        color: var(--fg);
+        margin-top: 4px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      figure {
+        margin: 0;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      figcaption {
+        margin-top: 10px;
+      }
+      .expect {
+        font-weight: 600;
+      }
+      .expect.hide {
+        color: var(--accent);
+      }
+      .small {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      footer {
+        margin-top: 40px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Is Block AI Content working?</h1>
+      <p>
+        This page has real images with and without "made by AI" labels inside them. If the extension is installed and
+        switched on, the first image is covered by a grey "AI-generated image hidden" box and the other two are left
+        alone.
+      </p>
+
+      <div id="status" role="status" aria-live="polite">Checking…</div>
+
+      <div class="grid">
+        <figure>
+          <img id="ai" src="images/ocsp.jpg" alt="Test image whose Content Credentials declare it AI-generated" />
+          <figcaption>
+            <div class="expect hide">Should be hidden</div>
+            <div class="small">Its Content Credentials (C2PA) say it was made with generative AI.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <img id="signed" src="images/CA.jpg" alt="Test photo with Content Credentials but no AI" />
+          <figcaption>
+            <div class="expect">Should be visible</div>
+            <div class="small">Also has Content Credentials, but they don't mention AI. Cameras sign photos too.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <img id="plain" src="images/no_manifest.jpg" alt="Ordinary test image with no labels" />
+          <figcaption>
+            <div class="expect">Should be visible</div>
+            <div class="small">An ordinary image with no labels at all.</div>
+          </figcaption>
+        </figure>
+      </div>
+
+      <p class="small" style="margin-top: 16px">
+        Click the hidden image once to see it anyway. Hover over it to see why it was hidden.
+      </p>
+
+      <footer>
+        <p>
+          <a href="https://github.com/radiosilence/block-ai-content/blob/main/INSTALL.md">How to install</a> ·
+          <a href="https://github.com/radiosilence/block-ai-content">Source code</a>
+        </p>
+        <p>
+          Test images from the <a href="https://github.com/contentauth/c2pa-rs">C2PA reference SDK</a>, © Adobe,
+          MIT/Apache-2.0.
+        </p>
+      </footer>
+    </main>
+    <script>
+      // The extension marks images with data-aiblock; read that to report status.
+      const status = document.getElementById("status");
+      const state = (id) => document.getElementById(id).getAttribute("data-aiblock");
+      const show = (kind, text, detail) => {
+        status.dataset.state = kind;
+        status.innerHTML = `${text}<small>${detail}</small>`;
+      };
+      const started = Date.now();
+      const tick = () => {
+        const hidden = state("ai");
+        const wrong = state("signed") === "blocked" || state("plain") === "blocked";
+        if (hidden && !wrong) {
+          return show("ok", "✅ It's working.", "The AI-labelled image is hidden and the others aren't.");
+        }
+        if (wrong) {
+          return show("bad", "Something's off.", "An image without an AI label was hidden. Please report this.");
+        }
+        if (Date.now() - started > 12000) {
+          return show(
+            "bad",
+            "❌ The extension doesn't seem to be running here.",
+            "Check it's installed and switched on (click its toolbar button), and that this site isn't in its “leave alone” list. Then reload this page.",
+          );
+        }
+        setTimeout(tick, 300);
+      };
+      tick();
+    </script>
+  </body>
+</html>

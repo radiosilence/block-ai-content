@@ -2,6 +2,7 @@ name: CI/CD
 # Every push and PR: lint, typecheck, unit tests, build and browser tests in one step.
 # On main, if package.json carries a version with no release yet, publish one
 # with the packaged extension attached. To ship: bump the version, push.
+# Also on main: deploy the test page in site/ to GitHub Pages.
 on:
   push:
     branches: [main]
@@ -77,3 +78,25 @@ jobs:
             --title "Block AI Content v$VERSION" \
             --generate-notes \
             --notes "Download **block-ai-content-$VERSION.zip** below, then follow the [installation guide](https://github.com/$GITHUB_REPOSITORY/blob/main/INSTALL.md)."
+
+  # The test page at https://radiosilence.github.io/block-ai-content/ (site/).
+  # Needs Settings → Pages → Source: "GitHub Actions" enabled once.
+  pages:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: node scripts/site.mjs
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
