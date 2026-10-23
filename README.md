@@ -83,15 +83,11 @@ hit the reload icon on the extension card after rebuilding.
 
 ### Releasing
 
-Bump `version` in `package.json` (the manifest takes its version from there),
-commit, then tag and push:
-
-```sh
-git tag v0.2.0 && git push origin v0.2.0
-```
-
-GitHub Actions runs the tests, builds, and attaches `block-ai-content-0.2.0.zip`
-to a new release, which is what [INSTALL.md](INSTALL.md) points people at.
+Bump `version` in `package.json` (the manifest takes its version from there)
+and push to `main`. GitHub Actions notices there's no release for that version
+yet, runs the tests, builds, and publishes `v0.2.0` with
+`block-ai-content-0.2.0.zip` attached, which is what [INSTALL.md](INSTALL.md)
+points people at. Pushes that don't change the version do nothing.
 
 ## Licence
 
