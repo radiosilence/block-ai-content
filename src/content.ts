@@ -1,5 +1,5 @@
 import { detect } from "./detect";
-import { send, type CheckResponse } from "./messages";
+import { type CheckResponse, send } from "./messages";
 import { findLabels, isMetaHost, mediaIn, platformName, postFor } from "./platforms/meta";
 import { isAllowlisted, loadSettings, onSettingsChanged, type Settings } from "./settings";
 
@@ -26,7 +26,28 @@ const flagged = new Set<Media>();
 const posts = new Map<Element, Element>(); // flagged post -> the label that flagged it
 
 const onMeta = isMetaHost(location.hostname);
-const active = () => settings.enabled && !isAllowlisted(location.hostname, settings.allowlist);
+
+/**
+ * After the extension is updated or reloaded, content scripts already running
+ * in open tabs are orphaned: every chrome.* call throws. Notice that once and
+ * go quiet rather than throwing on every image until the tab is refreshed.
+ */
+let orphaned = false;
+const alive = () => {
+  if (!orphaned && !chrome.runtime?.id) orphaned = true;
+  return !orphaned;
+};
+const sendSafe = async <T>(msg: Parameters<typeof send>[0]): Promise<T | undefined> => {
+  if (!alive()) return undefined;
+  try {
+    return await send<T>(msg);
+  } catch {
+    orphaned = !chrome.runtime?.id;
+    return undefined;
+  }
+};
+
+const active = () => alive() && settings.enabled && !isAllowlisted(location.hostname, settings.allowlist);
 const useLabels = () => onMeta && settings.platformLabels && active();
 
 // --- marking ----------------------------------------------------------------
@@ -38,7 +59,8 @@ const mark = (el: Media, reasons: string[]) => {
   el.setAttribute(MODE_ATTR, settings.mode);
   if (!el.hasAttribute("data-aiblock-title")) el.setAttribute("data-aiblock-title", el.title);
   el.title = `Hidden by Block AI Content\n${reasons.map((r) => `• ${r}`).join("\n")}\n\nClick to show.`;
-  void send({ type: "blocked" });
+  if (el instanceof HTMLVideoElement && settings.mode !== "label") el.pause();
+  void sendSafe({ type: "blocked" });
 };
 
 const unmark = (el: Media) => {
@@ -71,7 +93,9 @@ const inspect = async (url: string): Promise<CheckResponse> => {
       return { error: String(e) };
     }
   }
-  return send<CheckResponse>({ type: "check", url, heuristics: settings.heuristics });
+  return (
+    (await sendSafe<CheckResponse>({ type: "check", url, heuristics: settings.heuristics })) ?? { error: "orphaned" }
+  );
 };
 
 const consider = async (img: HTMLImageElement) => {
@@ -133,8 +157,13 @@ const scanLabels = (root: Node) => {
   }
 };
 
-/** Re-validate flagged posts after DOM changes and pick up media added to them. */
+/**
+ * Re-validate flagged posts after DOM changes and pick up media added to them.
+ * Also forget elements that have left the page, so an hour of infinite scroll
+ * doesn't keep thousands of dead nodes alive.
+ */
 const refreshPosts = () => {
+  for (const el of flagged) if (!el.isConnected) flagged.delete(el);
   for (const post of [...posts.keys()]) {
     if (!postStillLabelled(post)) unflagPost(post);
     else for (const el of mediaIn(post)) mark(el, labelReason());
@@ -152,7 +181,7 @@ const viewport = new IntersectionObserver(
 
 const watch = (root: ParentNode) => {
   if (root instanceof HTMLImageElement) viewport.observe(root);
-  root.querySelectorAll?.("img").forEach((img) => viewport.observe(img));
+  for (const img of root.querySelectorAll?.("img") ?? []) viewport.observe(img);
 };
 
 let refreshQueued = false;
@@ -170,7 +199,7 @@ const mutations = new MutationObserver((records) => {
       });
     }
   }
-  if (posts.size > 0 && !refreshQueued) {
+  if ((posts.size > 0 || flagged.size > 0) && !refreshQueued) {
     refreshQueued = true;
     requestAnimationFrame(() => {
       refreshQueued = false;
@@ -203,6 +232,17 @@ document.addEventListener(
   true,
 );
 
+// Sites (Facebook especially) autoplay video as it scrolls into view. Keep
+// hidden videos paused until revealed. `play` doesn't bubble; capture it.
+document.addEventListener(
+  "play",
+  (e) => {
+    const v = e.target;
+    if (v instanceof HTMLVideoElement && v.getAttribute(ATTR) === "blocked" && settings.mode !== "label") v.pause();
+  },
+  true,
+);
+
 // --- settings ---------------------------------------------------------------
 
 const reset = () => {
@@ -213,7 +253,10 @@ const reset = () => {
 const apply = () => {
   if (!active()) return reset();
   if (!useLabels()) [...posts.keys()].forEach(unflagPost);
-  flagged.forEach((el) => el.setAttribute(MODE_ATTR, settings.mode));
+  flagged.forEach((el) => {
+    el.setAttribute(MODE_ATTR, settings.mode);
+    if (el instanceof HTMLVideoElement && settings.mode !== "label" && el.getAttribute(ATTR) === "blocked") el.pause();
+  });
   scanLabels(document.body);
   // Re-examine everything not already flagged (cheap: the worker memoises).
   document.querySelectorAll("img").forEach((img) => {

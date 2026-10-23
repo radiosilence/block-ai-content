@@ -157,7 +157,15 @@ describe("WebP and other formats", () => {
   const riff = (...chunks: [string, Uint8Array][]) => {
     const body = chunks.flatMap(([type, data]) => {
       const len = data.length;
-      return [...enc(type), len & 0xff, (len >> 8) & 0xff, (len >> 16) & 0xff, len >>> 24, ...data, ...(len & 1 ? [0] : [])];
+      return [
+        ...enc(type),
+        len & 0xff,
+        (len >> 8) & 0xff,
+        (len >> 16) & 0xff,
+        len >>> 24,
+        ...data,
+        ...(len & 1 ? [0] : []),
+      ];
     });
     const size = body.length + 4;
     return join(enc("RIFF"), [size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24], enc("WEBP"), body);
@@ -178,5 +186,38 @@ describe("WebP and other formats", () => {
     const file = jpeg(jpegSegment(0xe1, enc(xmp)));
     expect((await detect(file, strict)).ai).toBe(false);
     expect((await detect(file, loose)).ai).toBe(true);
+  });
+});
+
+// --- partial downloads (Range requests) -------------------------------------
+
+describe("partial downloads", () => {
+  const HEAD = 256 * 1024;
+
+  it("finds the label in the first 256 KB of a real signed JPEG", async () => {
+    const d = await detect(fixture("ocsp.jpg").subarray(0, HEAD), strict, true);
+    expect(d).toMatchObject({ ai: true, complete: true });
+  });
+
+  it("calls a JPEG complete once it has reached the image data", async () => {
+    const d = await detect(fixture("CA.jpg").subarray(0, HEAD), strict, true);
+    expect(d).toMatchObject({ ai: false, complete: true });
+  });
+
+  it("asks for more when a JPEG's metadata runs past the cut", async () => {
+    const file = jpeg(jpegSegment(0xe1, enc(XMP_AI)));
+    const d = await detect(file.subarray(0, 20), strict, true);
+    expect(d).toMatchObject({ ai: false, complete: false });
+  });
+
+  it("always wants the whole of a PNG or unknown format", async () => {
+    const p = png(pngChunk("tEXt", enc("Comment\0hello")));
+    expect((await detect(p.subarray(0, p.length - 20), strict, true)).complete).toBe(false); // cut inside IDAT
+    expect((await detect(p, strict, true)).complete).toBe(true); // reached IEND
+    expect((await detect(enc("GIF89a....."), strict, true)).complete).toBe(false);
+  });
+
+  it("treats a whole file as complete whatever its format", async () => {
+    expect((await detect(enc("GIF89a....."), strict)).complete).toBe(true);
   });
 });

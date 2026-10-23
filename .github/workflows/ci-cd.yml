@@ -1,5 +1,5 @@
 name: CI/CD
-# Every push and PR: typecheck, test and build in one step.
+# Every push and PR: lint, typecheck, unit tests, build and browser tests in one step.
 # On main, if package.json carries a version with no release yet, publish one
 # with the packaged extension attached. To ship: bump the version, push.
 on:
@@ -25,8 +25,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Check (typecheck, test, build)
+      - run: npx playwright install --with-deps chromium
+      - name: Check (lint, typecheck, unit tests, build, browser tests)
         run: npm run check
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          if-no-files-found: ignore
       - run: npm run package
       - uses: actions/upload-artifact@v4
         with:

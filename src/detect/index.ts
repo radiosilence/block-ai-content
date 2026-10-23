@@ -8,6 +8,8 @@ export interface Detection {
   c2pa: boolean;
   /** Human-readable reasons for the verdict, for the tooltip and popup. */
   reasons: string[];
+  /** False if the input was a partial file that stopped before its metadata did. */
+  complete: boolean;
 }
 
 export interface DetectOptions {
@@ -33,7 +35,7 @@ const SOURCE_TYPES: ReadonlyArray<[needle: string, reason: string]> = [
 
 /** Phrases some vendors write into IPTC credit/description fields. */
 const VENDOR_PHRASES: ReadonlyArray<[needle: string, reason: string]> = [
-  ["made with google ai", "Credit line says \"Made with Google AI\""],
+  ["made with google ai", 'Credit line says "Made with Google AI"'],
 ];
 
 /** PNG text chunks written by local Stable Diffusion front-ends. */
@@ -46,8 +48,8 @@ const GENERATOR_CHUNKS: ReadonlyArray<[key: string, test: (v: string) => boolean
   ["Dream", () => true, "Stable Diffusion (dream) generation metadata"],
 ];
 
-export const detect = async (bytes: Uint8Array, opts: DetectOptions): Promise<Detection> => {
-  const meta = await extractMetadata(bytes);
+export const detect = async (bytes: Uint8Array, opts: DetectOptions, truncated = false): Promise<Detection> => {
+  const meta = await extractMetadata(bytes, truncated);
   const reasons = new Set<string>();
 
   const scan = (table: ReadonlyArray<[string, string]>) => {
@@ -72,5 +74,5 @@ export const detect = async (bytes: Uint8Array, opts: DetectOptions): Promise<De
 
   const list = [...reasons];
   if (list.length > 0 && meta.c2pa) list.push("Has C2PA Content Credentials");
-  return { ai: list.length > 0, c2pa: meta.c2pa, reasons: list };
+  return { ai: list.length > 0, c2pa: meta.c2pa, reasons: list, complete: meta.complete };
 };

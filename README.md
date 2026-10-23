@@ -11,14 +11,14 @@ Chromium browsers. iOS Safari is [tracked here](https://github.com/radiosilence/
 ## How it works
 
 There's no reliable way to look at an image and tell whether AI made it. AI
-detectors are bad at it and getting worse. What *does* work is reading the
+detectors are bad at it and getting worse. What _does_ work is reading the
 labels AI vendors put inside the file:
 
-| Signal | What it is | Who writes it |
-| --- | --- | --- |
-| **IPTC digital source type** `trainedAlgorithmicMedia` / `compositeWithTrainedAlgorithmicMedia` | The standard vocabulary for "a model made this (or part of it)", in XMP metadata or inside a C2PA manifest | OpenAI, Adobe Firefly, Google, Microsoft, Meta, … |
-| **C2PA Content Credentials** | A signed provenance record embedded in the file (JPEG APP11, PNG `caBX`, WebP `C2PA`) | Same, plus cameras and editing tools (which aren't AI, so C2PA alone isn't treated as a signal) |
-| **Generator leftovers** *(optional, on by default)* | Stable Diffusion `parameters`, ComfyUI `prompt`/`workflow`, InvokeAI metadata in PNG text chunks; Google's "Made with Google AI" credit | Local image-generation tools |
+| Signal                                                                                          | What it is                                                                                                                              | Who writes it                                                                                   |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **IPTC digital source type** `trainedAlgorithmicMedia` / `compositeWithTrainedAlgorithmicMedia` | The standard vocabulary for "a model made this (or part of it)", in XMP metadata or inside a C2PA manifest                              | OpenAI, Adobe Firefly, Google, Microsoft, Meta, …                                               |
+| **C2PA Content Credentials**                                                                    | A signed provenance record embedded in the file (JPEG APP11, PNG `caBX`, WebP `C2PA`)                                                   | Same, plus cameras and editing tools (which aren't AI, so C2PA alone isn't treated as a signal) |
+| **Generator leftovers** _(optional, on by default)_                                             | Stable Diffusion `parameters`, ComfyUI `prompt`/`workflow`, InvokeAI metadata in PNG text chunks; Google's "Made with Google AI" credit | Local image-generation tools                                                                    |
 
 The EU AI Act (Article 50(2)) requires providers of generative AI systems to
 mark their output in a machine-readable, detectable way. Under the Digital
@@ -37,7 +37,7 @@ metadata half of that.
 - **Text.** AI text watermarking isn't deployed in any detectable form, and
   statistical "AI text detectors" have false positive rates that make them
   unfit for purpose.
-- **Video and audio files** aren't inspected for embedded labels yet (C2PA supports them; contributions welcome). Videos *are* hidden on Meta sites via the post label.
+- **Video and audio files** aren't inspected for embedded labels yet (C2PA supports them; contributions welcome). Videos _are_ hidden on Meta sites via the post label.
 - **CSS background images** aren't inspected, only `<img>` elements.
 
 So: a false positive is very unlikely (the file has to say it's AI), but plenty
@@ -46,12 +46,11 @@ of AI content will get through.
 ### Facebook, Instagram and Threads
 
 Meta re-encodes uploads and strips their metadata, so the file check above sees
-nothing there. But Meta reads the IPTC/C2PA labels *at upload* and shows an
+nothing there. But Meta reads the IPTC/C2PA labels _at upload_ and shows an
 **"AI info"** label on the post. On those sites the extension finds that label
 and hides the images and videos in its post:
-
 - The label is matched by its exact text (or `aria-label`), never by class names,
-  which Meta regenerates constantly. A post that merely *mentions* "AI info" in
+  which Meta regenerates constantly. A post that merely _mentions_ "AI info" in
   a sentence doesn't count.
 - The post is the label's nearest `role="article"` / `<article>` /
   `aria-posinset` / feed-unit / dialog ancestor. Failing those, it's the nearest
@@ -84,13 +83,27 @@ src/
   ui/              Popup and options page
 static/            manifest.json, HTML, CSS
 scripts/           esbuild build, icon generator, release packager
-tests/             Vitest suite: real signed files from the C2PA reference SDK, and
+tests/             Vitest unit tests: real signed files from the C2PA reference SDK, and
                    Facebook/Instagram-shaped markup (jsdom)
+  e2e/             Playwright tests that load the built extension into real Chromium
 ```
 
 Images are inspected as they approach the viewport (1500px margin), skipping
-anything under 48px. The service worker re-downloads each image cookie-less,
-with up to 6 concurrent requests and a 25 MB cap, and caches verdicts per URL.
+anything under 48px. Chrome partitions its HTTP cache by site, so the service
+worker usually has to download each image again. To keep that cheap:
+
+- It asks for only the **first 256 KB** (`Range: bytes=0-262143`). That holds
+  all of a JPEG's metadata, and the parser can tell when it has seen the lot.
+  It only fetches the rest when the metadata runs on (PNG, WebP, big
+  manifests), or when the server ignores `Range`.
+- Requests are cookie-less, at most 6 at a time, capped at 25 MB.
+- Verdicts are cached per URL in memory and in `chrome.storage.session`, so
+  they survive Chrome stopping the idle worker. Failures aren't cached, so a
+  network blip gets retried next time.
+
+Hidden videos are paused, and kept paused through autoplay until revealed.
+After an extension update, tabs that were already open stop quietly rather
+than erroring on every image; they pick up the new version on refresh.
 
 Styling is entirely in `static/content.css`, keyed off `data-aiblock` attributes.
 "Hide" keeps the element's box (so the page doesn't reflow) and paints a
@@ -104,10 +117,14 @@ Requires Node 22+.
 npm install
 npm run build       # → dist/
 npm run watch       # rebuild on change
-npm test
+npm run lint        # Biome lint + format check (npm run format to fix)
 npm run typecheck
-npm run check       # all three of the above: what CI runs
+npm test            # unit tests
+npm run e2e         # browser tests against dist/ (needs a build first)
+npm run check       # all of the above, in order: what CI runs
 ```
+
+The browser tests need Playwright's Chromium: `npx playwright install chromium`.
 
 Load `dist/` via **chrome://extensions → Developer mode → Load unpacked**, and
 hit the reload icon on the extension card after rebuilding.
@@ -115,7 +132,8 @@ hit the reload icon on the extension card after rebuilding.
 ### CI/CD and releasing
 
 `.github/workflows/ci-cd.yml` runs `npm run check` on every push and pull
-request, then packages the extension (downloadable from the run as an artifact).
+request, then packages the extension (downloadable from the run as an
+artifact). If the browser tests fail, their traces are uploaded too.
 
 To release, bump `version` in `package.json` (the manifest takes its version
 from there) and push to `main`. Once the check passes, the release job sees

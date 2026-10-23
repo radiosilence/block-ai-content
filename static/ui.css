@@ -17,24 +17,103 @@
     --card: #222228;
   }
 }
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font:
+    14px / 1.45 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
 }
-h1 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; }
-h1 img { width: 20px; height: 20px; }
-h2 { font-size: 14px; margin: 0 0 8px; }
-p, li { color: var(--muted); }
-a { color: var(--accent); }
-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-.stack > * + * { margin-top: 12px; }
-.big { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
-textarea { width: 100%; min-height: 120px; font: 13px/1.4 ui-monospace, monospace; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
-button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.muted { color: var(--muted); font-size: 12px; }
+h1 {
+  font-size: 16px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h1 img {
+  width: 20px;
+  height: 20px;
+}
+h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+p,
+li {
+  color: var(--muted);
+}
+a {
+  color: var(--accent);
+}
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.stack > * + * {
+  margin-top: 12px;
+}
+.big {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+textarea {
+  width: 100%;
+  min-height: 120px;
+  font:
+    13px / 1.4 ui-monospace,
+    monospace;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+}
+button {
+  font: inherit;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+}
+button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  font-size: inherit;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}

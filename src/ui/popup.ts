@@ -27,10 +27,7 @@ const main = async () => {
     });
   }
 
-  $("options").addEventListener("click", (e) => {
-    e.preventDefault();
-    void chrome.runtime.openOptionsPage();
-  });
+  $("options").addEventListener("click", () => void chrome.runtime.openOptionsPage());
 };
 
 void main();

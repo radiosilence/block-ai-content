@@ -43,14 +43,26 @@ export const icon = (size) => {
   for (let py = 0; py < size; py++) {
     raw[py * (size * 4 + 1)] = 0; // filter: none
     for (let px = 0; px < size; px++) {
-      let r = 0, g = 0, b = 0, a = 0;
+      let r = 0,
+        g = 0,
+        b = 0,
+        a = 0;
       for (let sy = 0; sy < SS; sy++)
         for (let sx = 0; sx < SS; sx++) {
           const c = shade(((px + (sx + 0.5) / SS) / size) * 2 - 1, ((py + (sy + 0.5) / SS) / size) * 2 - 1);
-          if (c) { r += c[0]; g += c[1]; b += c[2]; a++; }
+          if (c) {
+            r += c[0];
+            g += c[1];
+            b += c[2];
+            a++;
+          }
         }
       const o = py * (size * 4 + 1) + 1 + px * 4;
-      if (a) { raw[o] = r / a; raw[o + 1] = g / a; raw[o + 2] = b / a; }
+      if (a) {
+        raw[o] = r / a;
+        raw[o + 1] = g / a;
+        raw[o + 2] = b / a;
+      }
       raw[o + 3] = Math.round((a / (SS * SS)) * 255);
     }
   }

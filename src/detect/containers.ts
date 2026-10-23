@@ -12,19 +12,33 @@ export interface Metadata {
   c2pa: boolean;
   /** PNG text chunks, keyed by their keyword. */
   text: Map<string, string>;
+  /**
+   * False when the bytes stop before the metadata does, i.e. a partial
+   * download that may be hiding a label further in.
+   */
+  complete: boolean;
 }
 
 const PNG_SIG = Uint8Array.of(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
 const JP = ascii("JP");
 
-export const extractMetadata = async (b: Uint8Array): Promise<Metadata> => {
+/**
+ * @param truncated whether `b` is only the start of the file (a range request).
+ */
+export const extractMetadata = async (b: Uint8Array, truncated = false): Promise<Metadata> => {
+  const meta = await parse(b);
+  if (!truncated) meta.complete = true;
+  return meta;
+};
+
+const parse = async (b: Uint8Array): Promise<Metadata> => {
   if (b[0] === 0xff && b[1] === 0xd8) return jpeg(b);
   if (startsWith(b, PNG_SIG)) return png(b);
   if (fourcc(b, 0) === "RIFF" && fourcc(b, 8) === "WEBP") return webp(b);
   // GIF, AVIF, HEIC, MP4 and friends: fall back to treating the whole file as
   // metadata. A 20+ character label turning up by chance in compressed data is
   // not a realistic concern.
-  return { format: "other", blobs: [b], c2pa: false, text: new Map() };
+  return { format: "other", blobs: [b], c2pa: false, text: new Map(), complete: false };
 };
 
 /**
@@ -36,6 +50,7 @@ const jpeg = (b: Uint8Array): Metadata => {
   const blobs: Uint8Array[] = [];
   const jumbf = new Map<number, Uint8Array[]>();
   let i = 2;
+  let complete = false;
   while (i + 4 <= b.length) {
     if (b[i] !== 0xff) break;
     const marker = b[i + 1] ?? 0;
@@ -47,7 +62,10 @@ const jpeg = (b: Uint8Array): Metadata => {
       i += 2; // standalone markers, no length
       continue;
     }
-    if (marker === 0xda || marker === 0xd9) break; // start of scan / end of image
+    if (marker === 0xda || marker === 0xd9) {
+      complete = true; // start of scan / end of image: all metadata is behind us
+      break;
+    }
     const len = u16be(b, i + 2);
     if (len < 2) break;
     const payload = b.subarray(i + 4, Math.min(i + 2 + len, b.length));
@@ -72,7 +90,7 @@ const jpeg = (b: Uint8Array): Metadata => {
     blobs.push(box);
     if (isC2paJumbf(box)) c2pa = true;
   }
-  return { format: "jpeg", blobs, c2pa, text: new Map() };
+  return { format: "jpeg", blobs, c2pa, text: new Map(), complete };
 };
 
 /**
@@ -96,7 +114,7 @@ const png = async (b: Uint8Array): Promise<Metadata> => {
     const type = fourcc(b, i + 4);
     const data = b.subarray(i + 8, Math.min(i + 8 + len, b.length));
     i += 12 + len;
-    if (type === "IEND") break;
+    if (type === "IEND") return { format: "png", blobs, c2pa, text, complete: true };
     if (type === "caBX") {
       c2pa = true;
       blobs.push(data);
@@ -109,7 +127,7 @@ const png = async (b: Uint8Array): Promise<Metadata> => {
       blobs.push(new TextEncoder().encode(entry[1]));
     }
   }
-  return { format: "png", blobs, c2pa, text };
+  return { format: "png", blobs, c2pa, text, complete: false };
 };
 
 const pngText = async (type: string, data: Uint8Array): Promise<[string, string] | null> => {
@@ -148,5 +166,6 @@ const webp = (b: Uint8Array): Metadata => {
       blobs.push(data);
     }
   }
-  return { format: "webp", blobs, c2pa, text: new Map() };
+  // XMP and EXIF come after the image data in WebP, so only the whole file will do.
+  return { format: "webp", blobs, c2pa, text: new Map(), complete: i >= u32le(b, 4) + 8 };
 };

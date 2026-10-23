@@ -1,5 +1,5 @@
-import * as esbuild from "esbuild";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import * as esbuild from "esbuild";
 import { icon } from "./icons.mjs";
 
 const watch = process.argv.includes("--watch");

@@ -15,7 +15,14 @@ beforeEach(() => {
 
 describe("hosts", () => {
   it("recognises Meta's sites and nothing else", () => {
-    for (const h of ["www.facebook.com", "m.facebook.com", "facebook.com", "www.instagram.com", "www.threads.net", "www.threads.com"])
+    for (const h of [
+      "www.facebook.com",
+      "m.facebook.com",
+      "facebook.com",
+      "www.instagram.com",
+      "www.threads.net",
+      "www.threads.com",
+    ])
       expect(isMetaHost(h)).toBe(true);
     for (const h of ["notfacebook.com", "facebook.com.evil.example", "example.com"]) expect(isMetaHost(h)).toBe(false);
     expect(platformName("www.instagram.com")).toBe("Instagram");
