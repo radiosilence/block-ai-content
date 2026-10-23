@@ -1,0 +1,26 @@
+{
+  "name": "block-ai-content",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser extension that hides images labelled as AI-generated via C2PA Content Credentials and IPTC metadata.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radiosilence/block-ai-content.git"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "package": "node scripts/build.mjs && node scripts/package.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.6",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

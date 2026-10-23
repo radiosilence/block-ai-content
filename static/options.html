@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Block AI Content: Settings</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>main { max-width: 640px; margin: 32px auto; padding: 0 16px; }</style>
+</head>
+<body>
+<main class="stack">
+  <h1><img src="icons/32.png" alt="">Block AI Content</h1>
+
+  <section class="card stack">
+    <label><input type="checkbox" id="enabled"> <strong>On</strong></label>
+  </section>
+
+  <section class="card stack">
+    <h2>When an AI-labelled image is found</h2>
+    <label><input type="radio" name="mode" value="hide"> Hide it behind a placeholder (click to show)</label>
+    <label><input type="radio" name="mode" value="blur"> Blur it (click to show)</label>
+    <label><input type="radio" name="mode" value="label"> Leave it visible, but outline it in red</label>
+  </section>
+
+  <section class="card stack">
+    <h2>How strict</h2>
+    <label><input type="checkbox" id="heuristics"> Also block images with tell-tale AI generator data</label>
+    <p class="muted">
+      Off: only formal "this is AI" labels (the IPTC/C2PA disclosures the EU AI Act's marking rules point to).<br>
+      On: also catches leftovers from tools such as Stable Diffusion and ComfyUI, and Google's "Made with Google AI" credit line.
+    </p>
+  </section>
+
+  <section class="card stack">
+    <h2>Sites to leave alone</h2>
+    <p class="muted">One website per line, e.g. <code>example.com</code>. Covers its subdomains too.</p>
+    <textarea id="allowlist" spellcheck="false"></textarea>
+    <div class="row"><span class="muted" id="saved"></span><button class="primary" id="save">Save</button></div>
+  </section>
+
+  <section class="card stack">
+    <h2>What this can and can't do</h2>
+    <ul>
+      <li><strong>Can:</strong> spot images that carry a machine-readable "made by AI" label in their file data: C2PA Content Credentials or the IPTC "digital source type" tag. OpenAI, Adobe Firefly, Google, Microsoft and others add these.</li>
+      <li><strong>Can't:</strong> spot AI images that carry no label. Many sites strip file data when you upload, which removes the label too.</li>
+      <li><strong>Can't:</strong> read invisible watermarks (e.g. Google SynthID). Only the vendor's own tools can check those.</li>
+      <li><strong>Can't:</strong> detect AI-written text. Nobody can do that reliably.</li>
+    </ul>
+    <p class="muted">Privacy: the extension downloads each image a second time to read its file data. Nothing is sent anywhere else, and nothing is logged.</p>
+  </section>
+</main>
+<script src="options.js" type="module"></script>
+</body>
+</html>

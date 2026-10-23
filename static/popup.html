@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Block AI Content</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>body { width: 300px; padding: 14px; }</style>
+</head>
+<body class="stack">
+  <div class="row">
+    <h1><img src="icons/32.png" alt="">Block AI Content</h1>
+    <label title="Turn the extension on or off everywhere"><input type="checkbox" id="enabled"></label>
+  </div>
+
+  <div class="card row">
+    <div>
+      <div class="big" id="count">0</div>
+      <div class="muted">labelled AI images hidden on this page</div>
+    </div>
+  </div>
+
+  <label class="card" id="site-row">
+    <input type="checkbox" id="site">
+    <span>Don't block on <strong id="host">this site</strong></span>
+  </label>
+
+  <p class="muted">
+    Only catches images whose maker labelled them as AI.
+    Unlabelled AI images and text get through.
+    <a href="#" id="options">Settings &amp; details</a>
+  </p>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
