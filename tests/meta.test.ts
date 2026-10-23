@@ -52,7 +52,7 @@ describe("Facebook feed", () => {
   });
 
   it("hides the labelled post's photo and video", () => {
-    expect(hiddenIds().sort()).toEqual(["ai-photo", "ai-video"]);
+    expect(hiddenIds().toSorted()).toEqual(["ai-photo", "ai-video"]);
   });
 
   it("leaves avatars alone", () => {

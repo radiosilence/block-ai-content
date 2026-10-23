@@ -164,7 +164,7 @@ const scanLabels = (root: Node) => {
  */
 const refreshPosts = () => {
   for (const el of flagged) if (!el.isConnected) flagged.delete(el);
-  for (const post of [...posts.keys()]) {
+  for (const post of posts.keys()) {
     if (!postStillLabelled(post)) unflagPost(post);
     else for (const el of mediaIn(post)) mark(el, labelReason());
   }

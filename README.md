@@ -49,6 +49,7 @@ Meta re-encodes uploads and strips their metadata, so the file check above sees
 nothing there. But Meta reads the IPTC/C2PA labels _at upload_ and shows an
 **"AI info"** label on the post. On those sites the extension finds that label
 and hides the images and videos in its post:
+
 - The label is matched by its exact text (or `aria-label`), never by class names,
   which Meta regenerates constantly. A post that merely _mentions_ "AI info" in
   a sentence doesn't count.
@@ -91,6 +92,7 @@ tests/             Vitest unit tests: real signed files from the C2PA reference 
 Images are inspected as they approach the viewport (1500px margin), skipping
 anything under 48px. Chrome partitions its HTTP cache by site, so the service
 worker usually has to download each image again. To keep that cheap:
+
 - It asks for only the **first 256 KB** (`Range: bytes=0-262143`). That holds
   all of a JPEG's metadata, and the parser can tell when it has seen the lot.
   It only fetches the rest when the metadata runs on (PNG, WebP, big
@@ -110,27 +112,29 @@ placeholder by pushing the image out with `object-position`.
 
 ## Development
 
-Requires Node 22+.
+Tooling is [mise](https://mise.jdx.dev) (pins Node and aube), [aube](https://github.com/aubepkg/aube)
+(package manager), and [oxc](https://oxc.rs) (`oxlint` + `oxfmt`).
 
 ```sh
-npm install
-npm run build       # → dist/
-npm run watch       # rebuild on change
-npm run lint        # Biome lint + format check (npm run format to fix)
-npm run typecheck
-npm test            # unit tests
-npm run e2e         # browser tests against dist/ (needs a build first)
-npm run check       # all of the above, in order: what CI runs
+mise install        # Node 22 + aube, from mise.toml
+aube install
+aube run build      # → dist/
+aube run watch      # rebuild on change
+aube run lint       # oxlint + oxfmt --check (aube run format to fix)
+aube run typecheck
+aube run test       # unit tests
+aube run e2e        # browser tests against dist/ (needs a build first)
+aube run check      # all of the above, in order: what CI runs
 ```
 
-The browser tests need Playwright's Chromium: `npx playwright install chromium`.
+The browser tests need Playwright's Chromium: `aube exec playwright install chromium`.
 
 Load `dist/` via **chrome://extensions → Developer mode → Load unpacked**, and
 hit the reload icon on the extension card after rebuilding.
 
 ### CI/CD and releasing
 
-`.github/workflows/ci-cd.yml` runs `npm run check` on every push and pull
+`.github/workflows/ci-cd.yml` sets up the same toolchain with `jdx/mise-action`, then runs `aube run check` on every push and pull
 request, then packages the extension (downloadable from the run as an
 artifact). If the browser tests fail, their traces are uploaded too.
 

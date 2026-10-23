@@ -3,8 +3,7 @@
    picture out of it and paint a placeholder in its place. */
 [data-aiblock="blocked"][data-aiblock-mode="hide"] {
   object-position: -99999px -99999px !important;
-  background:
-    #ececf1
+  background: #ececf1
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='70' viewBox='0 0 260 70'><circle cx='24' cy='35' r='13' fill='none' stroke='%23b3261e' stroke-width='3'/><line x1='15' y1='26' x2='33' y2='44' stroke='%23b3261e' stroke-width='3'/><text x='48' y='32' font-family='system-ui,sans-serif' font-size='14' font-weight='600' fill='%23333'>AI-generated image hidden</text><text x='48' y='50' font-family='system-ui,sans-serif' font-size='12' fill='%23666'>Click to show</text></svg>")
     center / contain no-repeat !important;
   cursor: pointer !important;

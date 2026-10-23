@@ -107,9 +107,10 @@ describe("JPEG", () => {
 
   it("survives truncated and garbage input", async () => {
     const full = jpeg(jpegSegment(0xe1, enc(XMP_AI)));
-    for (let n = 0; n < full.length; n += 7) await detect(full.subarray(0, n), loose);
-    await detect(enc("not an image at all"), loose);
-    await detect(new Uint8Array(0), loose);
+    const inputs = [enc("not an image at all"), new Uint8Array(0)];
+    for (let n = 0; n < full.length; n += 7) inputs.push(full.subarray(0, n));
+    const results = await Promise.all(inputs.map((b) => detect(b, loose)));
+    expect(results.every((d) => typeof d.ai === "boolean")).toBe(true);
   });
 });
 
@@ -153,24 +154,18 @@ describe("PNG", () => {
 
 // --- WebP / others ----------------------------------------------------------
 
-describe("WebP and other formats", () => {
-  const riff = (...chunks: [string, Uint8Array][]) => {
-    const body = chunks.flatMap(([type, data]) => {
-      const len = data.length;
-      return [
-        ...enc(type),
-        len & 0xff,
-        (len >> 8) & 0xff,
-        (len >> 16) & 0xff,
-        len >>> 24,
-        ...data,
-        ...(len & 1 ? [0] : []),
-      ];
-    });
-    const size = body.length + 4;
-    return join(enc("RIFF"), [size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24], enc("WEBP"), body);
-  };
+const riff = (...chunks: [string, Uint8Array][]) => {
+  const body: number[] = [];
+  for (const [type, data] of chunks) {
+    const len = data.length;
+    body.push(...enc(type), len & 0xff, (len >> 8) & 0xff, (len >> 16) & 0xff, len >>> 24, ...data);
+    if (len & 1) body.push(0);
+  }
+  const size = body.length + 4;
+  return join(enc("RIFF"), [size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24], enc("WEBP"), body);
+};
 
+describe("WebP and other formats", () => {
   it("reads XMP from a WebP chunk", async () => {
     const file = riff(["VP8 ", new Uint8Array(11)], ["XMP ", enc(XMP_AI)]);
     expect((await detect(file, strict)).ai).toBe(true);

@@ -1,0 +1,6 @@
+# Toolchain for working on the extension: `mise install`, then `aube install`.
+[tools]
+node = "22"
+# Pinned to the aqua backend: mise's default (packslip) backend for aube
+# currently fails fetching a skill file that 404s upstream.
+"aqua:aubepkg/aube" = "2.8.2"

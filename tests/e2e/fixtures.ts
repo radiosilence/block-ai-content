@@ -64,7 +64,7 @@ interface Fixtures {
 }
 
 export const test = base.extend<Fixtures>({
-  // biome-ignore lint/correctness/noEmptyPattern: Playwright's fixture signature
+  // oxlint-disable-next-line no-empty-pattern -- Playwright requires the {} parameter
   context: async ({}, use) => {
     const context = await chromium.launchPersistentContext("", {
       channel: "chromium", // the full browser, whose headless mode runs extensions
@@ -77,7 +77,7 @@ export const test = base.extend<Fixtures>({
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
     await use(worker);
   },
-  // biome-ignore lint/correctness/noEmptyPattern: Playwright's fixture signature
+  // oxlint-disable-next-line no-empty-pattern -- Playwright requires the {} parameter
   site: async ({}, use) => {
     const servers: Server[] = [];
     await use(async (pages) => {

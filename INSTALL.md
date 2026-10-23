@@ -25,12 +25,14 @@ The browser runs the extension straight from this folder. **If you delete or mov
 the folder later, the extension stops working**, so put it somewhere you won't tidy away.
 
 **On Windows**
+
 1. Open your **Downloads** folder.
 2. Right-click **`block-ai-content-0.3.0.zip`** and choose **Extract All…**
 3. Click **Browse…**, pick your **Documents** folder, then click **Extract**.
 4. You now have a folder called **`block-ai-content-0.3.0`** in Documents.
 
 **On a Mac**
+
 1. Open your **Downloads** folder in Finder.
 2. Double-click **`block-ai-content-0.3.0.zip`**. A folder called **`block-ai-content-0.3.0`** appears next to it.
 3. Drag that folder into **Documents** (in the Finder sidebar).
@@ -86,6 +88,7 @@ site, or to open the settings.
 ## What it will and won't catch
 
 It's important to know the limits, because "no grey boxes" does **not** mean "no AI".
+
 - ✅ It catches images whose **file contains a "made by AI" label**. OpenAI,
   Adobe Firefly, Google, Microsoft and others add these labels. The EU AI Act
   requires providers of AI image generators to label their output in a
@@ -108,6 +111,7 @@ It's important to know the limits, because "no grey boxes" does **not** mean "no
 When you add it, the browser says the extension can **"read and change all your
 data on all websites"**. That sounds alarming, so here's what it actually does
 with that access:
+
 - **Read:** it looks at the images on each page and downloads each one a second
   time to read the label inside the file.
 - **Change:** it covers up the images that are labelled as AI.
