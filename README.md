@@ -91,7 +91,6 @@ tests/             Vitest unit tests: real signed files from the C2PA reference 
 Images are inspected as they approach the viewport (1500px margin), skipping
 anything under 48px. Chrome partitions its HTTP cache by site, so the service
 worker usually has to download each image again. To keep that cheap:
-
 - It asks for only the **first 256 KB** (`Range: bytes=0-262143`). That holds
   all of a JPEG's metadata, and the parser can tell when it has seen the lot.
   It only fetches the rest when the metadata runs on (PNG, WebP, big
