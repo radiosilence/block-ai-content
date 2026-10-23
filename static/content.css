@@ -1,23 +1,24 @@
-/* Hide: keep the element's box (so the page doesn't jump about) but push the
+/* Applies to <img> and <video>.
+   Hide: keep the element's box (so the page doesn't jump about) but push the
    picture out of it and paint a placeholder in its place. */
-img[data-aiblock="blocked"][data-aiblock-mode="hide"] {
+[data-aiblock="blocked"][data-aiblock-mode="hide"] {
   object-position: -99999px -99999px !important;
   background: #ececf1 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='70' viewBox='0 0 260 70'><circle cx='24' cy='35' r='13' fill='none' stroke='%23b3261e' stroke-width='3'/><line x1='15' y1='26' x2='33' y2='44' stroke='%23b3261e' stroke-width='3'/><text x='48' y='32' font-family='system-ui,sans-serif' font-size='14' font-weight='600' fill='%23333'>AI-generated image hidden</text><text x='48' y='50' font-family='system-ui,sans-serif' font-size='12' fill='%23666'>Click to show</text></svg>") center / contain no-repeat !important;
   cursor: pointer !important;
 }
 
-img[data-aiblock="blocked"][data-aiblock-mode="blur"] {
+[data-aiblock="blocked"][data-aiblock-mode="blur"] {
   filter: blur(28px) saturate(0.4) !important;
   clip-path: inset(0) !important;
   cursor: pointer !important;
 }
 
-img[data-aiblock="blocked"][data-aiblock-mode="label"],
-img[data-aiblock="revealed"] {
+[data-aiblock="blocked"][data-aiblock-mode="label"],
+[data-aiblock="revealed"] {
   outline: 3px solid #b3261e !important;
   outline-offset: -3px !important;
 }
 
-img[data-aiblock="revealed"] {
+[data-aiblock="revealed"] {
   outline-style: dashed !important;
 }

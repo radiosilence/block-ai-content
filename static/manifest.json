@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Block AI Content",
   "short_name": "Block AI",
-  "description": "Hides images that are labelled as AI-generated (C2PA Content Credentials and IPTC metadata).",
+  "description": "Hides images labelled as AI-generated: C2PA and IPTC labels everywhere, plus \"AI info\" posts on Facebook, Instagram and Threads.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/16.png",

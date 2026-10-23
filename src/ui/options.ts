@@ -18,6 +18,10 @@ const main = async () => {
   heuristics.checked = s.heuristics;
   heuristics.addEventListener("change", () => void saveSettings({ heuristics: heuristics.checked }));
 
+  const platformLabels = $<HTMLInputElement>("platformLabels");
+  platformLabels.checked = s.platformLabels;
+  platformLabels.addEventListener("change", () => void saveSettings({ platformLabels: platformLabels.checked }));
+
   const allowlist = $<HTMLTextAreaElement>("allowlist");
   allowlist.value = s.allowlist.join("\n");
   $("save").addEventListener("click", async () => {

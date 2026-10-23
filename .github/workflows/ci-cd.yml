@@ -1,0 +1,70 @@
+name: CI/CD
+# Every push and PR: typecheck, test and build in one step.
+# On main, if package.json carries a version with no release yet, publish one
+# with the packaged extension attached. To ship: bump the version, push.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check (typecheck, test, build)
+        run: npm run check
+      - run: npm run package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: block-ai-content-*.zip
+          if-no-files-found: error
+
+  release:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out version
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "v$version is already released; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.v.outputs.skip != 'true'
+        with:
+          name: extension
+      - name: Publish release
+        if: steps.v.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          gh release create "v$VERSION" "block-ai-content-$VERSION.zip" \
+            --target "$GITHUB_SHA" \
+            --title "Block AI Content v$VERSION" \
+            --generate-notes \
+            --notes "Download **block-ai-content-$VERSION.zip** below, then follow the [installation guide](https://github.com/$GITHUB_REPOSITORY/blob/main/INSTALL.md)."

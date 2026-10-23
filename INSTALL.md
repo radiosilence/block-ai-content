@@ -2,8 +2,8 @@
 
 This guide assumes no technical knowledge. It takes about five minutes.
 
-**Works in:** Google Chrome, Microsoft Edge, Brave, Arc, Vivaldi and Opera, on Windows or Mac.
-**Doesn't work in:** Safari or Firefox.
+**Works in:** Google Chrome on Windows or Mac. Microsoft Edge, Brave, Arc, Vivaldi and Opera work too.
+**Doesn't work in:** Safari (including iPhone and iPad) or Firefox, yet.
 
 > **On a work computer?** Many firms lock their browsers down so you can't add
 > extensions yourself. If you get stuck at Step 3 because the **Developer mode**
@@ -15,7 +15,7 @@ This guide assumes no technical knowledge. It takes about five minutes.
 ## Step 1: Download it
 
 1. Go to the **[Releases page](https://github.com/radiosilence/block-ai-content/releases/latest)**.
-2. Under the heading **Assets**, click the file called **`block-ai-content-0.1.0.zip`** (the number may be higher).
+2. Under the heading **Assets**, click the file called **`block-ai-content-0.2.0.zip`** (the number may be higher).
    Don't click the ones called "Source code".
 3. It will save to your **Downloads** folder.
 
@@ -27,14 +27,14 @@ the folder later, the extension stops working**, so put it somewhere you won't t
 **On Windows**
 
 1. Open your **Downloads** folder.
-2. Right-click **`block-ai-content-0.1.0.zip`** and choose **Extract All…**
+2. Right-click **`block-ai-content-0.2.0.zip`** and choose **Extract All…**
 3. Click **Browse…**, pick your **Documents** folder, then click **Extract**.
-4. You now have a folder called **`block-ai-content-0.1.0`** in Documents.
+4. You now have a folder called **`block-ai-content-0.2.0`** in Documents.
 
 **On a Mac**
 
 1. Open your **Downloads** folder in Finder.
-2. Double-click **`block-ai-content-0.1.0.zip`**. A folder called **`block-ai-content-0.1.0`** appears next to it.
+2. Double-click **`block-ai-content-0.2.0.zip`**. A folder called **`block-ai-content-0.2.0`** appears next to it.
 3. Drag that folder into **Documents** (in the Finder sidebar).
 
 > Check: open the folder. You should see a file called **`manifest.json`** among
@@ -61,7 +61,7 @@ the folder later, the extension stops working**, so put it somewhere you won't t
 
 3. A new row of buttons appears. Click **Load unpacked**.
 4. In the window that opens, go to **Documents**, click once on the
-   **`block-ai-content-0.1.0`** folder, and click **Select** (Windows) or
+   **`block-ai-content-0.2.0`** folder, and click **Select** (Windows) or
    **Open** / **Select** (Mac).
 5. **Block AI Content** now appears in your list of extensions. That's it: it's on.
 
@@ -80,6 +80,9 @@ site, or to open the settings.
 
 - AI-labelled images are replaced with a grey box saying **"AI-generated image hidden"**.
 - **Click the box once** to see the image anyway. Click again to use it normally (for example, to follow a link).
+- On **Facebook, Instagram and Threads** it hides the pictures and videos in any
+  post that Facebook itself has marked **"AI info"** (you'll see those words
+  next to the poster's name).
 - In **Settings** you can choose to **blur** images instead of hiding them, or just **outline them in red**.
 
 ## What it will and won't catch
@@ -92,8 +95,12 @@ It's important to know the limits, because "no grey boxes" does **not** mean "no
   machine-readable way; this is what reads those labels.
 - ❌ It **can't** catch AI images with no label. Older images, many open-source
   tools, and anyone who deliberately removes the label all get through.
-- ❌ Many websites (most social media included) **strip this information out** when
-  people upload images, so the label is gone before you ever see the picture.
+- ❌ Many websites **strip this information out** when people upload images, so
+  the label is gone before you ever see the picture.
+- ⚠️ **Facebook, Instagram and Threads** strip it too, but they show their own
+  "AI info" label instead, and the extension reads that. So on those sites it
+  catches exactly what Facebook catches: no more, no less. This currently only
+  works if your Facebook is set to **English**.
 - ❌ It **can't** read invisible watermarks (such as Google's SynthID). Only the
   company that made them can check those.
 - ❌ It **can't** detect AI-written text. No tool can do that reliably; the ones

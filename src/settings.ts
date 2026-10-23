@@ -6,6 +6,8 @@ export interface Settings {
   mode: Mode;
   /** Act on generator leftovers as well as formal disclosures. */
   heuristics: boolean;
+  /** On Facebook, Instagram and Threads, act on Meta's own "AI info" labels. */
+  platformLabels: boolean;
   /** Hostnames where the extension does nothing (subdomains included). */
   allowlist: string[];
 }
@@ -14,6 +16,7 @@ export const DEFAULTS: Settings = {
   enabled: true,
   mode: "hide",
   heuristics: true,
+  platformLabels: true,
   allowlist: [],
 };
 

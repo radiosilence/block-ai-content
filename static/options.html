@@ -31,6 +31,16 @@
   </section>
 
   <section class="card stack">
+    <h2>Facebook, Instagram and Threads</h2>
+    <label><input type="checkbox" id="platformLabels"> Hide images and videos in posts Meta has labelled "AI info"</label>
+    <p class="muted">
+      These sites remove the label from the image file itself, so the usual check can't see it.
+      Meta reads the label when the image is uploaded and shows "AI info" on the post instead; this setting uses that.
+      Only works with the sites set to English for now.
+    </p>
+  </section>
+
+  <section class="card stack">
     <h2>Sites to leave alone</h2>
     <p class="muted">One website per line, e.g. <code>example.com</code>. Covers its subdomains too.</p>
     <textarea id="allowlist" spellcheck="false"></textarea>
@@ -42,6 +52,7 @@
     <ul>
       <li><strong>Can:</strong> spot images that carry a machine-readable "made by AI" label in their file data: C2PA Content Credentials or the IPTC "digital source type" tag. OpenAI, Adobe Firefly, Google, Microsoft and others add these.</li>
       <li><strong>Can't:</strong> spot AI images that carry no label. Many sites strip file data when you upload, which removes the label too.</li>
+      <li><strong>On Facebook, Instagram and Threads:</strong> relies on Meta's "AI info" label, so it only catches what Meta catches.</li>
       <li><strong>Can't:</strong> read invisible watermarks (e.g. Google SynthID). Only the vendor's own tools can check those.</li>
       <li><strong>Can't:</strong> detect AI-written text. Nobody can do that reliably.</li>
     </ul>

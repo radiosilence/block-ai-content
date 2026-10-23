@@ -1,23 +1,55 @@
-import { detect, type Detection } from "./detect";
+import { detect } from "./detect";
 import { send, type CheckResponse } from "./messages";
+import { findLabels, isMetaHost, mediaIn, platformName, postFor } from "./platforms/meta";
 import { isAllowlisted, loadSettings, onSettingsChanged, type Settings } from "./settings";
 
 /**
- * Watches the page's images, asks the background worker to inspect each one
- * as it nears the viewport, and marks the ones labelled as AI-generated.
+ * Two ways in:
+ *  1. Every site: inspect each image's file for an embedded AI label.
+ *  2. Facebook / Instagram / Threads: those strip file metadata, so read the
+ *     "AI info" label Meta puts on the post and hide that post's media.
+ *
  * All styling lives in content.css, keyed off data attributes, so changing
  * mode is just a matter of rewriting one attribute.
  */
 
+type Media = HTMLImageElement | HTMLVideoElement;
+
 const ATTR = "data-aiblock"; // "blocked" | "revealed"
 const MODE_ATTR = "data-aiblock-mode";
+const POST_ATTR = "data-aiblock-post";
 const MIN_SIZE = 48; // px; skip icons, avatars-in-lists, tracking pixels
 
 let settings: Settings;
 const checked = new WeakMap<HTMLImageElement, string>(); // img -> last URL inspected
-const flagged = new Set<HTMLImageElement>();
+const flagged = new Set<Media>();
+const posts = new Map<Element, Element>(); // flagged post -> the label that flagged it
 
+const onMeta = isMetaHost(location.hostname);
 const active = () => settings.enabled && !isAllowlisted(location.hostname, settings.allowlist);
+const useLabels = () => onMeta && settings.platformLabels && active();
+
+// --- marking ----------------------------------------------------------------
+
+const mark = (el: Media, reasons: string[]) => {
+  if (flagged.has(el)) return;
+  flagged.add(el);
+  el.setAttribute(ATTR, "blocked");
+  el.setAttribute(MODE_ATTR, settings.mode);
+  if (!el.hasAttribute("data-aiblock-title")) el.setAttribute("data-aiblock-title", el.title);
+  el.title = `Hidden by Block AI Content\n${reasons.map((r) => `• ${r}`).join("\n")}\n\nClick to show.`;
+  void send({ type: "blocked" });
+};
+
+const unmark = (el: Media) => {
+  flagged.delete(el);
+  el.removeAttribute(ATTR);
+  el.removeAttribute(MODE_ATTR);
+  el.title = el.getAttribute("data-aiblock-title") ?? "";
+  el.removeAttribute("data-aiblock-title");
+};
+
+// --- 1. file metadata -------------------------------------------------------
 
 const urlOf = (img: HTMLImageElement): string | null => {
   const src = img.currentSrc || img.src;
@@ -42,28 +74,9 @@ const inspect = async (url: string): Promise<CheckResponse> => {
   return send<CheckResponse>({ type: "check", url, heuristics: settings.heuristics });
 };
 
-const mark = (img: HTMLImageElement, d: Detection) => {
-  if (flagged.has(img)) return;
-  flagged.add(img);
-  img.setAttribute(ATTR, "blocked");
-  img.setAttribute(MODE_ATTR, settings.mode);
-  img.dataset.aiblockReason = d.reasons.join("\n");
-  if (!img.hasAttribute("data-aiblock-title")) img.setAttribute("data-aiblock-title", img.title);
-  img.title = `Hidden by Block AI Content\n${d.reasons.map((r) => `• ${r}`).join("\n")}\n\nClick to show.`;
-  void send({ type: "blocked" });
-};
-
-const unmark = (img: HTMLImageElement) => {
-  flagged.delete(img);
-  img.removeAttribute(ATTR);
-  img.removeAttribute(MODE_ATTR);
-  delete img.dataset.aiblockReason;
-  img.title = img.getAttribute("data-aiblock-title") ?? "";
-  img.removeAttribute("data-aiblock-title");
-};
-
 const consider = async (img: HTMLImageElement) => {
   if (!active() || tooSmall(img)) return;
+  if (inFlaggedPost(img)) return; // already handled by its post's label
   const url = urlOf(img);
   if (!url || checked.get(img) === url) return;
   checked.set(img, url);
@@ -72,7 +85,60 @@ const consider = async (img: HTMLImageElement) => {
 
   const result = await inspect(url);
   if (checked.get(img) !== url || !active()) return; // superseded meanwhile
-  if ("ai" in result && result.ai) mark(img, result);
+  if ("ai" in result && result.ai) mark(img, result.reasons);
+};
+
+// --- 2. platform labels (Meta) ----------------------------------------------
+
+const labelReason = () => [`${platformName(location.hostname)} labelled this post "AI info"`];
+
+/**
+ * A post stays flagged only while the label that flagged it is still inside
+ * it. React reuses DOM nodes, and we don't want a recycled container to keep
+ * hiding whatever post moves into it next.
+ */
+const postStillLabelled = (post: Element): boolean => {
+  const label = posts.get(post);
+  return !!label && label.isConnected && post.contains(label);
+};
+
+const unflagPost = (post: Element) => {
+  posts.delete(post);
+  post.removeAttribute(POST_ATTR);
+  for (const el of mediaIn(post)) if (flagged.has(el)) unmark(el);
+};
+
+const inFlaggedPost = (el: Element): boolean => {
+  if (!useLabels()) return false;
+  const post = el.closest(`[${POST_ATTR}]`);
+  if (!post) return false;
+  if (postStillLabelled(post)) {
+    if (el instanceof HTMLImageElement || el instanceof HTMLVideoElement) {
+      if (mediaIn(post).includes(el)) mark(el, labelReason());
+    }
+    return true;
+  }
+  unflagPost(post);
+  return false;
+};
+
+const scanLabels = (root: Node) => {
+  if (!useLabels()) return;
+  for (const label of findLabels(root)) {
+    const post = postFor(label);
+    if (!post) continue;
+    posts.set(post, label);
+    post.setAttribute(POST_ATTR, "");
+    for (const el of mediaIn(post)) mark(el, labelReason());
+  }
+};
+
+/** Re-validate flagged posts after DOM changes and pick up media added to them. */
+const refreshPosts = () => {
+  for (const post of [...posts.keys()]) {
+    if (!postStillLabelled(post)) unflagPost(post);
+    else for (const el of mediaIn(post)) mark(el, labelReason());
+  }
 };
 
 // --- discovery --------------------------------------------------------------
@@ -89,6 +155,7 @@ const watch = (root: ParentNode) => {
   root.querySelectorAll?.("img").forEach((img) => viewport.observe(img));
 };
 
+let refreshQueued = false;
 const mutations = new MutationObserver((records) => {
   for (const r of records) {
     if (r.type === "attributes") {
@@ -97,8 +164,18 @@ const mutations = new MutationObserver((records) => {
       viewport.unobserve(r.target);
       viewport.observe(r.target);
     } else {
-      r.addedNodes.forEach((n) => n instanceof Element && watch(n));
+      r.addedNodes.forEach((n) => {
+        if (n instanceof Element) watch(n);
+        if (n instanceof Element || n.nodeType === Node.TEXT_NODE) scanLabels(n);
+      });
     }
+  }
+  if (posts.size > 0 && !refreshQueued) {
+    refreshQueued = true;
+    requestAnimationFrame(() => {
+      refreshQueued = false;
+      refreshPosts();
+    });
   }
 });
 
@@ -112,28 +189,32 @@ document.addEventListener(
   true,
 );
 
-// First click on a hidden image reveals it rather than following any link it
+// First click on hidden media reveals it rather than following any link it
 // sits inside. The next click behaves normally.
 document.addEventListener(
   "click",
   (e) => {
-    const img = (e.target as Element | null)?.closest?.(`img[${ATTR}="blocked"]`);
-    if (!(img instanceof HTMLImageElement) || settings.mode === "label") return;
+    const el = (e.target as Element | null)?.closest?.(`[${ATTR}="blocked"]`);
+    if (!el || settings.mode === "label") return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    img.setAttribute(ATTR, "revealed");
+    el.setAttribute(ATTR, "revealed");
   },
   true,
 );
 
 // --- settings ---------------------------------------------------------------
 
+const reset = () => {
+  flagged.forEach(unmark);
+  [...posts.keys()].forEach(unflagPost);
+};
+
 const apply = () => {
-  if (!active()) {
-    flagged.forEach(unmark);
-    return;
-  }
-  flagged.forEach((img) => img.setAttribute(MODE_ATTR, settings.mode));
+  if (!active()) return reset();
+  if (!useLabels()) [...posts.keys()].forEach(unflagPost);
+  flagged.forEach((el) => el.setAttribute(MODE_ATTR, settings.mode));
+  scanLabels(document.body);
   // Re-examine everything not already flagged (cheap: the worker memoises).
   document.querySelectorAll("img").forEach((img) => {
     if (flagged.has(img)) return;
@@ -146,6 +227,7 @@ const apply = () => {
 void loadSettings().then((s) => {
   settings = s;
   watch(document);
+  scanLabels(document.body);
   mutations.observe(document.documentElement, {
     childList: true,
     subtree: true,
@@ -155,7 +237,7 @@ void loadSettings().then((s) => {
   onSettingsChanged((next) => {
     const recheck = next.heuristics !== settings.heuristics;
     settings = next;
-    if (recheck) flagged.forEach(unmark);
+    if (recheck) reset();
     apply();
   });
 });

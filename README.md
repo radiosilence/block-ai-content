@@ -1,6 +1,8 @@
 # Block AI Content
 
-A browser extension that hides images labelled as AI-generated.
+A Chrome extension that hides images labelled as AI-generated, including on
+Facebook, Instagram and Threads. (Also works in Edge, Brave, Arc and other
+Chromium browsers. iOS Safari is [tracked here](https://github.com/radiosilence/block-ai-content/issues).)
 
 **Just want to install it? → [Installation guide](INSTALL.md)** (no technical knowledge needed)
 
@@ -35,11 +37,35 @@ metadata half of that.
 - **Text.** AI text watermarking isn't deployed in any detectable form, and
   statistical "AI text detectors" have false positive rates that make them
   unfit for purpose.
-- **Video and audio** aren't inspected yet (C2PA supports them; contributions welcome).
+- **Video and audio files** aren't inspected for embedded labels yet (C2PA supports them; contributions welcome). Videos *are* hidden on Meta sites via the post label.
 - **CSS background images** aren't inspected, only `<img>` elements.
 
 So: a false positive is very unlikely (the file has to say it's AI), but plenty
 of AI content will get through.
+
+### Facebook, Instagram and Threads
+
+Meta re-encodes uploads and strips their metadata, so the file check above sees
+nothing there. But Meta reads the IPTC/C2PA labels *at upload* and shows an
+**"AI info"** label on the post. On those sites the extension finds that label
+and hides the images and videos in its post:
+
+- The label is matched by its exact text (or `aria-label`), never by class names,
+  which Meta regenerates constantly. A post that merely *mentions* "AI info" in
+  a sentence doesn't count.
+- The post is the label's nearest `role="article"` / `<article>` /
+  `aria-posinset` / feed-unit / dialog ancestor. Failing those, it's the nearest
+  ancestor holding media, but never one containing the whole feed.
+- Media drawn smaller than 100px (avatars, icons) is left alone.
+- Media added to a flagged post later (carousels, lazy loading) is hidden too.
+  If React reuses the post's container for a different post, the hidden media
+  is shown again.
+- **English UI only** for now; other languages show translated label text.
+- **Tested against Facebook- and Instagram-shaped markup, not live Facebook**,
+  which needs a logged-in account. If Meta changes the label's wording or
+  structure this will need updating; please open an issue if it stops working.
+
+It only catches what Meta catches, so unlabelled AI content still gets through.
 
 ## Architecture
 
@@ -49,13 +75,17 @@ src/
     containers.ts  Pulls metadata out of JPEG / PNG / WebP (falls back to a whole-file scan for others)
     index.ts       Looks for AI labels in that metadata
     bytes.ts       Byte-level helpers
+  platforms/
+    meta.ts        Finds Meta's "AI info" labels and the post/media they belong to. Unit tested.
   background.ts    Service worker: fetches image bytes (bypassing CORS), memoises results, badge count
-  content.ts       Finds <img>s near the viewport, asks the worker about each, marks the AI ones
+  content.ts       Finds <img>s near the viewport, asks the worker about each, marks the AI ones;
+                   on Meta sites also watches for "AI info" labels
   settings.ts      chrome.storage.sync-backed settings
   ui/              Popup and options page
 static/            manifest.json, HTML, CSS
 scripts/           esbuild build, icon generator, release packager
-tests/             Vitest suite, including real signed files from the C2PA reference SDK
+tests/             Vitest suite: real signed files from the C2PA reference SDK, and
+                   Facebook/Instagram-shaped markup (jsdom)
 ```
 
 Images are inspected as they approach the viewport (1500px margin), skipping
@@ -76,18 +106,22 @@ npm run build       # → dist/
 npm run watch       # rebuild on change
 npm test
 npm run typecheck
+npm run check       # all three of the above: what CI runs
 ```
 
 Load `dist/` via **chrome://extensions → Developer mode → Load unpacked**, and
 hit the reload icon on the extension card after rebuilding.
 
-### Releasing
+### CI/CD and releasing
 
-Bump `version` in `package.json` (the manifest takes its version from there)
-and push to `main`. GitHub Actions notices there's no release for that version
-yet, runs the tests, builds, and publishes `v0.2.0` with
-`block-ai-content-0.2.0.zip` attached, which is what [INSTALL.md](INSTALL.md)
-points people at. Pushes that don't change the version do nothing.
+`.github/workflows/ci-cd.yml` runs `npm run check` on every push and pull
+request, then packages the extension (downloadable from the run as an artifact).
+
+To release, bump `version` in `package.json` (the manifest takes its version
+from there) and push to `main`. Once the check passes, the release job sees
+there's no release for that version yet and publishes e.g. `v0.3.0` with
+`block-ai-content-0.3.0.zip` attached, which is what [INSTALL.md](INSTALL.md)
+points people at. Pushes that don't change the version don't release.
 
 ## Licence
 
