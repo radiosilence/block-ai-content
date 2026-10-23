@@ -8,6 +8,23 @@ const ROOT = path.resolve(import.meta.dirname, "../..");
 const DIST = path.join(ROOT, "dist");
 export const fixture = (name: string) => readFileSync(path.join(ROOT, "tests/fixtures", name));
 
+/** An image from the test fixtures, or failing that from the public test page's own images. */
+const image = (name: string) => {
+  try {
+    return fixture(name);
+  } catch {
+    return readFileSync(path.join(ROOT, "site/images", name));
+  }
+};
+
+const TYPES: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+};
+const typeOf = (name: string) => TYPES[path.extname(name)] ?? "application/octet-stream";
+
 export interface Hit {
   path: string;
   range?: string;
@@ -31,7 +48,7 @@ const serve = (pages: Record<string, string>) =>
       }
       let body: Buffer;
       try {
-        body = fixture(path.basename(url.pathname));
+        body = image(path.basename(url.pathname));
       } catch {
         res.writeHead(404);
         return res.end();
@@ -40,13 +57,13 @@ const serve = (pages: Record<string, string>) =>
       if (m) {
         const end = Math.min(Number(m[1]), body.length - 1);
         res.writeHead(206, {
-          "content-type": "image/jpeg",
+          "content-type": typeOf(url.pathname),
           "content-range": `bytes 0-${end}/${body.length}`,
           "content-length": end + 1,
         });
         return res.end(body.subarray(0, end + 1));
       }
-      res.writeHead(200, { "content-type": "image/jpeg", "content-length": body.length });
+      res.writeHead(200, { "content-type": typeOf(url.pathname), "content-length": body.length });
       res.end(body);
     });
     server.listen(0, "127.0.0.1", () => {

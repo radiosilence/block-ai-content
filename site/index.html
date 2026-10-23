@@ -104,8 +104,16 @@
         object-fit: cover;
         border-radius: 8px;
       }
+      figure img.whole {
+        aspect-ratio: auto;
+        height: auto;
+      }
       figcaption {
         margin-top: 10px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 40px 0 8px;
       }
       .expect {
         font-weight: 600;
@@ -163,6 +171,46 @@
         Click the hidden image once to see it anyway. Hover over it to see why it was hidden.
       </p>
 
+      <h2>Made with AI, but not hidden</h2>
+      <p>
+        These two <em>were</em> made with AI, but the extension correctly leaves them alone, because neither file says
+        so in a way a computer can read. This is the most common case on the web today, and why "nothing hidden" doesn't
+        mean "no AI".
+      </p>
+
+      <div class="grid">
+        <figure>
+          <img
+            id="gemini"
+            src="images/gemini-no-label.jpg"
+            alt="Image generated with Google Gemini, with no label inside"
+          />
+          <figcaption>
+            <div class="expect">Visible: made with Google Gemini</div>
+            <div class="small">
+              The file has no Content Credentials or AI label. Either none was added, or it was lost when the image was
+              saved, shared or uploaded somewhere. Google also adds an invisible SynthID watermark, which only Google's
+              own tools can check.
+            </div>
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            class="whole"
+            id="claude"
+            src="images/claude-no-label.svg"
+            alt="Drawing made with Claude, with no label inside"
+          />
+          <figcaption>
+            <div class="expect">Visible: made with Claude</div>
+            <div class="small">
+              Claude wrote this picture as drawing code (SVG). The words "C2PA test" are just drawn on it: visible to
+              you, but not a label a computer can check, and nothing signed the file.
+            </div>
+          </figcaption>
+        </figure>
+      </div>
+
       <footer>
         <p>
           <a href="https://github.com/radiosilence/block-ai-content/blob/main/INSTALL.md">How to install</a> ·
@@ -170,7 +218,7 @@
         </p>
         <p>
           Test images from the <a href="https://github.com/contentauth/c2pa-rs">C2PA reference SDK</a>, © Adobe,
-          MIT/Apache-2.0.
+          MIT/Apache-2.0. The Gemini and Claude examples were made by the project's author with those tools.
         </p>
       </footer>
     </main>

@@ -11,7 +11,8 @@ test("the public test page reports the extension as working", async ({ context, 
   await page.goto(origin);
   await expect(page.locator("#status")).toHaveAttribute("data-state", "ok", { timeout: 10_000 });
   await expect(page.locator("#status")).toContainText("It's working");
-  expect(await states(page)).toEqual({ ai: "blocked", signed: null, plain: null });
+  // Only the labelled image; the unlabelled AI examples are there to show what can't be caught.
+  expect(await states(page)).toEqual({ ai: "blocked", signed: null, plain: null, gemini: null, claude: null });
 });
 
 test("the public test page says so when the extension is switched off", async ({ context, site, setSettings }) => {
